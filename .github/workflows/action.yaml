@@ -1,10 +1,32 @@
-name: Must run on custom runner
+name: Deploy my Lambda Function
 
-on: push
+# trigger on all push events to main branch
+on: 
+  push:
+    branches:
+      - main
 
 jobs:
-  init:
-    runs-on: self-hosted
+  build:
+    runs-on: ubuntu-latest
     steps:
-      - run: echo 'hello cloud gurus'
-      - run: echo $HOSTNAME
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install libraries
+        run: |
+            cd function
+            python -m pip install --upgrade pip
+            if [ -f requirements.txt ]; then pip install -r requirements.txt -t .; fi
+      - name: Create zip bundle
+        run: |
+            cd function
+            zip -r ../${{ github.sha }}.zip .
+      - name: Archive artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: zipped-bundle
+          path: ${{ github.sha }}.zip
